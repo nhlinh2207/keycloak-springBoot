@@ -21,7 +21,6 @@ public class KeycloakCurrentUser {
 
     private String role;
 
-
     private List<String> roles;
     private String firstName;
     private String fullName;
@@ -47,8 +46,7 @@ public class KeycloakCurrentUser {
     private String mobile;
     private UUID organizationUnitId;
 
-
-    private boolean requireUpdatePass;
-    private int statusCode;
+    private Boolean requireUpdatePass;
+    private Integer statusCode;
     private String status;
 }

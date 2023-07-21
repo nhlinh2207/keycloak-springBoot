@@ -2,6 +2,9 @@ package com.example.springkeycloak.config.keycloak;
 
 import com.example.springkeycloak.dto.KeycloakCurrentUser;
 import com.example.springkeycloak.dto.request.LoginRequest;
+import com.example.springkeycloak.exception.UnSuccessException;
+import com.example.springkeycloak.model.User;
+import com.example.springkeycloak.repository.IUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -44,6 +47,9 @@ public class KeyCloakUserService {
     @Autowired
     private KeycloakPropertyReader keycloakPropertyReader;
 
+    @Autowired
+    private IUserRepository userRepository;
+
     // Đăng nhập
     public AccessTokenResponse login(LoginRequest loginRequest) {
         Map<String, Object> clientCredentials = new LinkedHashMap<>();
@@ -55,6 +61,7 @@ public class KeyCloakUserService {
 
     // Tạo user
     public KeycloakCurrentUser userRegister(KeycloakCurrentUser keycloakCurrentUser) {
+
         // Create Keycloak
         Keycloak keycloak = KeycloakBuilder.builder()
                 .serverUrl(authServerUrl)
@@ -68,14 +75,15 @@ public class KeyCloakUserService {
                 .build();
 
         UserRepresentation user = new UserRepresentation();
-                           user.setEnabled(false);
                            user.setFirstName(keycloakCurrentUser.getFirstName());
                            user.setLastName(keycloakCurrentUser.getLastName());
                            user.setUsername(keycloakCurrentUser.getUsername());
                            user.setEmail(keycloakCurrentUser.getEmail());
                            user.setEnabled(true);
-
-        if(keycloakCurrentUser.isRequireUpdatePass()){
+                           ;
+        if(keycloakCurrentUser.getRequireUpdatePass()){
+            // Update password
+            System.out.println("Update password");
             List<String> listRequireAction = new ArrayList<>();
             listRequireAction.add("UPDATE_PASSWORD");
             user.setRequiredActions(listRequireAction);
@@ -134,17 +142,17 @@ public class KeyCloakUserService {
     }
 
     // Kiểm tra password
-    public Boolean isPassCorrect(String User, String oldPass) {
+    public Boolean isPassCorrect(String username, String oldPass) {
         Map<String, Object> clientCredentials = new HashMap<>();
         clientCredentials.put("secret", clientSecret);
         Configuration configuration = new Configuration(authServerUrl, realm, clientId, clientCredentials, null);
         AuthzClient authzClient = AuthzClient.create(configuration);
-        AccessTokenResponse response = authzClient.obtainAccessToken(User, oldPass);
+        AccessTokenResponse response = authzClient.obtainAccessToken(username, oldPass);
         return !response.getToken().isEmpty();
     }
 
     // Cập nhật password
-    public void UpdatePassword(String userID, String NewPassword) {
+    public void updatePassword(String userKeycloakId, String NewPassword) {
         @SuppressWarnings("unchecked")
                 // Get Current Login user
         KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = (KeycloakPrincipal<RefreshableKeycloakSecurityContext>) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -154,7 +162,7 @@ public class KeyCloakUserService {
         // Get realm
         RealmResource realmResource = keycloak.realm(keycloakAdminClientConfig.getRealm());
         UsersResource usersResource = realmResource.users();
-        UserResource userResource = usersResource.get(userID);
+        UserResource userResource = usersResource.get(userKeycloakId);
         CredentialRepresentation passwordCred = new CredentialRepresentation();
         passwordCred.setTemporary(false);
         passwordCred.setType(CredentialRepresentation.PASSWORD);
@@ -176,7 +184,7 @@ public class KeyCloakUserService {
     }
 
     // Tìm kiếm user
-    public Object SearchUsers(){
+    public Object searchUsers(){
         @SuppressWarnings("unchecked")
         KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = (KeycloakPrincipal<RefreshableKeycloakSecurityContext>) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         KeycloakAdminClientConfig keycloakAdminClientConfig = KeycloakAdminClientUtils.loadConfig(keycloakPropertyReader);

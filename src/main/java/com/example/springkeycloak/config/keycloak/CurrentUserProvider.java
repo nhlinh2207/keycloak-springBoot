@@ -7,10 +7,12 @@ import org.keycloak.representations.AccessToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+@Service
 public class CurrentUserProvider {
 
     @Value("${keycloak.resource}")
